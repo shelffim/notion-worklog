@@ -1,0 +1,18 @@
+# 비밀값 — 절대 커밋 금지
+.env
+.env.*
+token
+
+# 런타임 산출물
+state.json
+error.log
+.lock-*
+
+# 파이썬
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+build/
+*.egg-info/

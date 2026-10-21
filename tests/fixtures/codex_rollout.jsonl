@@ -1,0 +1,15 @@
+{"timestamp": "2026-10-01T05:00:00.000Z", "type": "session_meta", "payload": {"id": "0199-codex-thread", "timestamp": "2026-10-01T05:00:00.000Z", "cwd": "/Users/me/work/my-app", "originator": "codex_cli_rs", "cli_version": "0.159.3"}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": "<permissions instructions>sandbox ...</permissions instructions>"}], "id": "msg_dev1"}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "<recommended_plugins>\n- browser\n</recommended_plugins>"}, {"type": "input_text", "text": "# AGENTS.md instructions for /Users/me/work/my-app\n\n<INSTRUCTIONS>\nUse pnpm.\n</INSTRUCTIONS>"}, {"type": "input_text", "text": "<environment_context>\n  <cwd>/Users/me/work/my-app</cwd>\n</environment_context>"}], "id": "msg_ctx"}}
+{"timestamp": "2026-10-01T05:00:05.000Z", "type": "turn_context", "payload": {"cwd": "/Users/me/work/my-app", "model": "gpt-x"}}
+{깨진 줄
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "로그인 버그 고쳐줘\n세션이 자꾸 끊겨"}], "id": "msg_u1"}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "reasoning", "summary": [{"type": "summary_text", "text": "생각 중"}]}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "custom_tool_call", "name": "shell", "input": "rg SECRET_TOOL_INPUT src/"}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "custom_tool_call_output", "output": "TOOL_OUTPUT_LEAK: src/auth.ts"}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "파일을 살펴볼게요."}], "id": "msg_a1", "phase": "commentary"}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "고쳤습니다. 토큰 갱신 순서를 바꿨어요."}], "id": "msg_a2", "phase": "final_answer"}}
+{"timestamp": "2026-10-01T05:01:00.000Z", "type": "event_msg", "payload": {"type": "agent_message", "message": "고쳤습니다. 토큰 갱신 순서를 바꿨어요."}}
+{"timestamp": "2026-10-01T05:01:00.000Z", "type": "event_msg", "payload": {"type": "user_message", "message": "로그인 버그 고쳐줘"}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "# Files mentioned by the user:\n\n## spec.pdf: /Users/me/work/spec.pdf\n\n## My request for Codex:\n이 문서 요약해줘\n"}]}}
+{"timestamp": "2026-10-01T05:00:10.000Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "요약입니다."}]}}
