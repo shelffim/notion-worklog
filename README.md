@@ -67,6 +67,22 @@ NOTION_TOKEN=ntn_... notion-worklog setup --database "<테이블 URL>" --lang ko
 > ⚠️ 대화에 붙여넣은 내용은 그대로 Notion 에 올라갑니다. 비밀번호·API 키 같은 값을
 > 대화에 붙여넣지 마세요. 기록할 테이블의 공유 범위도 확인하세요.
 
+## 기록하지 않는 세션
+
+훅은 모든 세션에서 돌기 때문에, 에이전트가 훅을 시험하려고 띄운 `claude -p` 세션까지
+기록될 수 있습니다. 그래서 다음 세션은 건너뜁니다.
+
+- **임시 폴더에서 연 세션** — 작업 폴더가 `/tmp`, `/var/tmp`, 시스템 임시 폴더(`$TMPDIR`)
+  아래인 세션. 테스트용 일회용 프로젝트는 거의 이런 곳에 만들어집니다.
+- **`NOTION_WORKLOG_DISABLE=1` 로 띄운 세션** — 임시 폴더 밖에서 테스트할 때 씁니다.
+
+  ```bash
+  NOTION_WORKLOG_DISABLE=1 claude -p "..."
+  ```
+
+헤드리스 실행(`claude -p`, `codex exec`) 자체는 거르지 않습니다. 실제 프로젝트 폴더에서
+도는 자동화 작업은 그대로 기록됩니다.
+
 ## 파일 위치
 
 모두 `~/.notion-worklog/` 에 있습니다 (`NOTION_WORKLOG_HOME` 으로 옮길 수 있음).
@@ -91,6 +107,8 @@ rm -rf ~/.notion-worklog        # 설정·토큰·기록 캐시까지 지우려�
 - **아무것도 기록되지 않는다** → `~/.notion-worklog/error.log` 를 보세요.
   `object_not_found` 면 테이블에 통합이 연결되지 않은 것입니다 (설정 2단계).
 - **Codex 만 기록되지 않는다** → `/hooks` 에서 훅을 신뢰했는지 확인하세요.
+- **특정 세션만 기록되지 않는다** → 작업 폴더가 임시 폴더인지, `NOTION_WORKLOG_DISABLE`
+  이 켜져 있지 않은지 확인하세요 ([기록하지 않는 세션](#기록하지-않는-세션)).
 - **본문에 ⚠️ 마커가 있다** → Notion API 앞단 보안 필터가 그 메시지를 거부한 것입니다.
   원문은 첨부된 `session.md` 에 그대로 있습니다.
 

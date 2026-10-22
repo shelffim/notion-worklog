@@ -2,10 +2,13 @@ import copy
 import itertools
 import json
 import os
+import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
 
+import pytest
 import requests
 
 from notion_worklog import config
@@ -646,6 +649,56 @@ def test_save_merges_instead_of_clobbering_another_window(tmp_path, monkeypatch)
     assert set(final) == {"sess-1", "other-sess"}
     assert final["other-sess"]["page_id"] == "page-other"
     assert final["sess-1"]["page_id"] == "page-new"
+
+
+# --- 기록하지 않는 세션 ---------------------------------------
+
+@pytest.mark.parametrize("cwd", [
+    "/tmp",
+    "/tmp/hooktest/orig",
+    "/var/tmp/proj",
+    # 실제로 섞여 들어온 테스트 세션의 cwd 모양. macOS 만 /tmp 가 /private/tmp 의 링크다.
+    pytest.param("/private/tmp/claude-501/x/scratchpad/e2e/proj",
+                 marks=pytest.mark.skipif(sys.platform != "darwin", reason="macOS 전용 경로")),
+])
+def test_sessions_in_a_temp_dir_are_skipped(cwd, monkeypatch):
+    monkeypatch.delenv(worklog.DISABLE_ENV, raising=False)
+
+    assert worklog.should_skip(dict(payload(), cwd=cwd))
+
+
+def test_sessions_under_the_users_temp_dir_are_skipped(monkeypatch):
+    """macOS 의 $TMPDIR 은 /tmp 가 아니라 /var/folders/.../T 다."""
+    monkeypatch.delenv(worklog.DISABLE_ENV, raising=False)
+    monkeypatch.setattr(tempfile, "tempdir", "/Users/me/fake-tmp")
+
+    assert worklog.should_skip(dict(payload(), cwd="/Users/me/fake-tmp/proj"))
+
+
+@pytest.mark.parametrize("cwd", ["/Users/me/Projects", "/tmpfoo/proj", "/Users/me/tmp/proj", "", None])
+def test_sessions_elsewhere_are_recorded(cwd, monkeypatch):
+    monkeypatch.delenv(worklog.DISABLE_ENV, raising=False)
+
+    assert not worklog.should_skip(dict(payload(), cwd=cwd))
+
+
+@pytest.mark.parametrize("value, skipped", [("1", True), ("true", True), ("0", False), ("", False)])
+def test_disable_env_turns_recording_off(value, skipped, monkeypatch):
+    monkeypatch.setenv(worklog.DISABLE_ENV, value)
+
+    assert worklog.should_skip(payload()) is skipped
+
+
+@pytest.mark.parametrize("env, cwd", [("1", "/Users/me/Projects"), ("", "/tmp/hooktest/orig")])
+def test_run_skips_before_reading_the_setup(env, cwd, tmp_path, monkeypatch):
+    """설정이 없어도 조용히 물러난다 — 거르기가 설정 확인보다 먼저다."""
+    monkeypatch.setattr(config, "CONFIG_PATH", tmp_path / "config.json")
+    monkeypatch.setattr(config, "TOKEN_PATH", tmp_path / "token")
+    monkeypatch.delenv("NOTION_TOKEN", raising=False)
+    monkeypatch.setenv(worklog.DISABLE_ENV, env)
+    monkeypatch.setattr(worklog, "Notion", lambda *a, **k: pytest.fail("Notion 을 부르면 안 된다"))
+
+    worklog.run(dict(payload(), cwd=cwd))
 
 
 # --- session.md 첨부 -------------------------------------------

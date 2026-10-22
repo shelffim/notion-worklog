@@ -6,6 +6,7 @@
 """
 import os
 import re
+import tempfile
 import time
 import traceback
 from datetime import datetime
@@ -52,6 +53,10 @@ ATTACHMENT_RETRY_SECONDS = 120
 # 20MB 는 Notion 단일 파트 상한(20MB)에 맞춘 값이다. 실측한 이 세션의
 # session.md 가 156KB 였으니 정상 사용과는 두 자릿수 배 차이가 있다.
 MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024
+
+# 켜져 있으면 그 세션을 기록하지 않는다. 훅은 에이전트의 환경을 물려받으므로
+# `NOTION_WORKLOG_DISABLE=1 claude -p ...` 처럼 띄운 세션만 빠진다. "0" 은 끈 것으로 본다.
+DISABLE_ENV = "NOTION_WORKLOG_DISABLE"
 
 
 def lock_path(session_id):
@@ -401,7 +406,34 @@ def _sync_attachment(api, cache, save, session_id, page_id, entries, title,
             )
 
 
+def _temp_roots():
+    """시스템 임시 폴더들. macOS 는 /tmp 가 /private/tmp 의 링크라 실제 경로로 푼다."""
+    return {os.path.realpath(p) for p in ("/tmp", "/var/tmp", tempfile.gettempdir())}
+
+
+def should_skip(payload):
+    """기록하지 않을 세션인가.
+
+    훅은 사용자 전역 설정에 등록되므로, 에이전트가 훅을 시험하려고 띄운
+    `claude -p` 세션까지 기록한다 (2026-10 실제로 테스트 대화 6건이 테이블에 섞였다).
+    헤드리스 여부로 거르지 않는다 — 하네스의 단계 실행처럼 헤드리스로 도는 진짜
+    작업이 있다. 대신 작업 폴더로 거른다. 테스트는 설정을 마음대로 바꿔도 되는
+    일회용 프로젝트가 필요해 거의 항상 임시 폴더에서 돌고, 진짜 작업은 실제
+    프로젝트 폴더에서 돈다. 임시 폴더 밖의 테스트는 DISABLE_ENV 로 끈다.
+    """
+    if os.environ.get(DISABLE_ENV, "").strip() not in ("", "0"):
+        return True
+    cwd = payload.get("cwd")
+    if not isinstance(cwd, str) or not cwd:
+        return False
+    real = os.path.realpath(cwd)
+    return any(real == root or real.startswith(root + os.sep) for root in _temp_roots())
+
+
 def run(payload, agent_key="claude"):
+    # 설정을 읽기 전에 거른다 — 설정이 없는 기계의 테스트 세션이 error.log 를 채우지 않게.
+    if should_skip(payload):
+        return
     settings = config.load_config()
     token = config.load_token()
     db_id = settings.get("database_id")

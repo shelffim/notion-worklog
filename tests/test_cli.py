@@ -36,13 +36,29 @@ def test_garbage_stdin_exits_zero_silently(tmp_path):
 
 
 def test_missing_setup_exits_zero_silently_and_leaves_a_trace(tmp_path):
-    payload = json.dumps({"session_id": "x", "transcript_path": "/없음", "cwd": "/tmp"})
+    payload = json.dumps({"session_id": "x", "transcript_path": "/없음",
+                          "cwd": "/Users/me/Projects"})
 
     result = hook(tmp_path, payload, "--agent", "claude")
 
     assert result.returncode == 0
     assert result.stdout == ""
     assert "setup" in error_log(tmp_path)
+
+
+@pytest.mark.parametrize("cwd, env_extra", [
+    ("/tmp/hooktest/orig", None),
+    ("/Users/me/Projects", {"NOTION_WORKLOG_DISABLE": "1"}),
+])
+def test_skipped_session_exits_zero_and_leaves_no_trace(tmp_path, cwd, env_extra):
+    """설정이 없는 기계라도 거른 세션은 error.log 에 아무것도 남기지 않는다."""
+    payload = json.dumps({"session_id": "x", "transcript_path": "/없음", "cwd": cwd})
+
+    result = hook(tmp_path, payload, "--agent", "claude", env_extra=env_extra)
+
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert error_log(tmp_path) == ""
 
 
 @pytest.mark.parametrize("args", [("--agent", "cursor"), (), ("--bogus",)])
